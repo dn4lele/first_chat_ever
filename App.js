@@ -80,6 +80,7 @@ function Create_User({ navigation }) {
       Age: age,
       Gender: gender,
       Email: email,
+      id: socket.id,
     };
     setUsers([...users, newuser]);
 
