@@ -12,11 +12,11 @@ export function useSetUser() {
 }
 
 export function UserProvider({ children }) {
-  const [users, setUsers] = useState([]);
+  const [user, setUser] = useState();
 
   return (
-    <UserContext.Provider value={users}>
-      <SetUserContext.Provider value={setUsers}>
+    <UserContext.Provider value={user}>
+      <SetUserContext.Provider value={setUser}>
         {children}
       </SetUserContext.Provider>
     </UserContext.Provider>

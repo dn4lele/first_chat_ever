@@ -8,6 +8,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { faker } from "@faker-js/faker";
 import TextAvatar from "react-native-text-avatar";
 import { useUser, useSetUser, UserProvider } from "./contexts/UserContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
 function colorHash(inputString) {
   var sum = 0;
@@ -56,8 +58,25 @@ function colorHash(inputString) {
 }
 
 function Create_User({ navigation }) {
-  const users = useUser();
-  const setUsers = useSetUser();
+  const user = useUser();
+  const setUser = useSetUser();
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  const getData = async () => {
+    try {
+      const value = await AsyncStorage.getItem("Person_value");
+
+      if (value !== null) {
+        setUser(JSON.parse(value));
+        navigation.navigate("chatScreen");
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -73,6 +92,13 @@ function Create_User({ navigation }) {
     setEmail(faker.internet.email());
   }
 
+  const storeData = async (person) => {
+    try {
+      const jsonValue = JSON.stringify(person);
+      await AsyncStorage.setItem("Person_value", jsonValue);
+    } catch (e) {}
+  };
+
   function submit_user() {
     const newuser = {
       FirstName: name,
@@ -82,7 +108,9 @@ function Create_User({ navigation }) {
       Email: email,
       id: socket.id,
     };
-    setUsers([...users, newuser]);
+    setUser(newuser);
+
+    storeData(newuser);
 
     setName("");
     setLastName("");
@@ -108,36 +136,38 @@ function Create_User({ navigation }) {
         {name + " " + lastName}
       </TextAvatar>
 
-      <Input
-        style={styles.input}
-        placeholder="FirstName"
-        value={name}
-        onChangeText={setName}
-      />
-      <Input
-        style={styles.input}
-        placeholder="LastName"
-        value={lastName}
-        onChangeText={setLastName}
-      />
-      <Input
-        style={styles.input}
-        placeholder="Age"
-        value={age}
-        onChangeText={setAge}
-      />
-      <Input
-        style={styles.input}
-        placeholder="Gender"
-        value={gender}
-        onChangeText={setGender}
-      />
-      <Input
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-      />
+      <View style={styles.inputs}>
+        <Input
+          style={styles.input}
+          placeholder="FirstName"
+          value={name}
+          onChangeText={setName}
+        />
+        <Input
+          style={styles.input}
+          placeholder="LastName"
+          value={lastName}
+          onChangeText={setLastName}
+        />
+        <Input
+          style={styles.input}
+          placeholder="Age"
+          value={age}
+          onChangeText={setAge}
+        />
+        <Input
+          style={styles.input}
+          placeholder="Gender"
+          value={gender}
+          onChangeText={setGender}
+        />
+        <Input
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+        />
+      </View>
       <View style={styles.button}>
         <Button title="Submit User" onPress={() => submit_user()} />
         <Button title="Give faker data" onPress={() => give_faker_data()} />
@@ -146,7 +176,7 @@ function Create_User({ navigation }) {
   );
 }
 
-function chatScreen({ navigation }) {
+function ChatScreen({ navigation }) {
   const user = useUser();
   const setUser = useSetUser();
 
@@ -157,46 +187,86 @@ function chatScreen({ navigation }) {
     setmessageList([...messageList, msg]);
   });
 
-  console.log(user);
-  console.log(messageList);
   return (
     <>
       <ScrollView style={styles.scrollView}>
         {messageList.map((msg, index) => (
-          <Text
-            key={index}
+          <View
             style={{
-              color: msg.checkid != socket.id ? "red" : "green",
-              style: "solid",
-              width: "100%",
-              fontSize: 20,
+              display: "flex",
+              flexDirection: "row",
               padding: 10,
-              textAlign: msg.checkid != socket.id ? "left" : "right",
-              backgroundColor:
-                msg.checkid != socket.id ? "#FF7F7F" : "lightgreen",
+              justifyContent:
+                msg.checkid != socket.id ? "flex-start" : "flex-end",
             }}
           >
-            {msg.str}
-          </Text>
+            <View>
+              {msg.checkid != socket.id && (
+                <TextAvatar
+                  style={styles.TextAvatar}
+                  backgroundColor={colorHash(msg.Usersender.FirstName).hex}
+                  textColor={colorHash(msg.Usersender.LastName).hex}
+                  size={Platform.OS === "web" ? 60 : 40}
+                  type={"circle"}
+                >
+                  {msg.Usersender.FirstName + " " + msg.Usersender.LastName}
+                </TextAvatar>
+              )}
+            </View>
+
+            <Text
+              key={index}
+              style={{
+                width: "70%",
+                color: msg.checkid != socket.id ? "red" : "green",
+                style: "solid",
+                fontSize: 20,
+                padding: 20,
+                textAlign: msg.checkid != socket.id ? "left" : "right",
+                backgroundColor:
+                  msg.checkid != socket.id ? "#FF7F7F" : "lightgreen",
+              }}
+            >
+              {msg.str}
+            </Text>
+
+            <View>
+              {msg.checkid == socket.id && (
+                <TextAvatar
+                  style={styles.TextAvatar}
+                  backgroundColor={colorHash(msg.Usersender.FirstName).hex}
+                  textColor={colorHash(msg.Usersender.LastName).hex}
+                  size={Platform.OS === "web" ? 60 : 40}
+                  type={"circle"}
+                >
+                  {msg.Usersender.FirstName + " " + msg.Usersender.LastName}
+                </TextAvatar>
+              )}
+            </View>
+          </View>
         ))}
       </ScrollView>
-
-      <View>
-        <Input
-          placeholder="type here"
-          value={message}
-          onChangeText={setMessage}
-        />
-        <Button
-          title="send"
-          onPress={() => {
-            socket.emit("message", {
-              str: message,
-              checkid: socket.id,
-            });
-            setMessage("");
-          }}
-        />
+      <View style={styles.bottomchat}>
+        <View style={styles.InputChat}>
+          <Input
+            placeholder="type here"
+            value={message}
+            onChangeText={setMessage}
+          />
+        </View>
+        <View>
+          <Button
+            title="send"
+            onPress={() => {
+              socket.emit("message", {
+                str: message,
+                checkid: socket.id,
+                Usersender: user,
+              });
+              setMessage("");
+            }}
+          />
+        </View>
       </View>
     </>
   );
@@ -209,16 +279,8 @@ export default function App() {
     <UserProvider>
       <NavigationContainer>
         <Stack.Navigator>
-          <Stack.Screen
-            name="create_user"
-            component={Create_User}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="chatScreen"
-            component={chatScreen}
-            options={{ headerShown: false }}
-          />
+          <Stack.Screen name="create_user" component={Create_User} />
+          <Stack.Screen name="chatScreen" component={ChatScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </UserProvider>
@@ -227,11 +289,8 @@ export default function App() {
 
 const styles = StyleSheet.create({
   input: {
-    width: "80%",
-    height: 40,
-    margin: 12,
+    margin: 5,
     borderWidth: 1,
-    padding: 10,
   },
   scrollView: {
     backgroundColor: "lightgray",
@@ -241,15 +300,23 @@ const styles = StyleSheet.create({
   TextAvatar: {
     margin: 25,
   },
-  detailContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   button: {
     display: "flex",
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     width: "70%",
+  },
+  inputs: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-around",
+    width: 290,
+  },
+  bottomchat: {
+    display: "flex",
+    flexDirection: "row",
+  },
+  InputChat: {
+    width: "80%",
   },
 });
