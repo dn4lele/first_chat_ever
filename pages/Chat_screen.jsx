@@ -11,11 +11,12 @@ import { useOtherUsers, useSetOtherUsers } from "../contexts/OtherUsersContext";
 export default function ChatScreen({ navigation }) {
   const mysocket = useRef();
   const input = useRef();
+  const scrollv_ref = useRef();
 
   const handleKeyPress = ({ nativeEvent }) => {
     if (nativeEvent.key === "Enter") {
       send();
-      input.current.focus();
+      input.focus();
     }
   };
 
@@ -29,6 +30,10 @@ export default function ChatScreen({ navigation }) {
   const [messageList, setmessageList] = useState([]);
 
   useEffect(() => {
+    scrollv_ref.current.scrollToEnd({ animated: true });
+  }, [messageList]);
+
+  useEffect(() => {
     mysocket.current = socket.connect();
     if (user != null) {
       mysocket.current.emit("message", {
@@ -38,7 +43,7 @@ export default function ChatScreen({ navigation }) {
       });
     }
     mysocket.current.on("message", (msg) => {
-      setmessageList((messageList) => [...messageList, msg]);
+      setmessageList(msg);
     });
 
     mysocket.current.on("getPeople", (allusers) => {
@@ -72,7 +77,7 @@ export default function ChatScreen({ navigation }) {
           <Text>{OU.length} people connected</Text>
         </Button>
       )}
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} ref={scrollv_ref}>
         {messageList.map((msg, index) => (
           <View key={index}>
             {msg.type == "chatmessage" && (
@@ -134,14 +139,11 @@ export default function ChatScreen({ navigation }) {
                 </View>
               </View>
             )}
-            {msg.type == "connectUser" && (
-              <View style={styles.userjoined}>
-                <Text style={styles.userjoinedtext}>{msg.message}</Text>
-              </View>
-            )}
-            {msg.type == "disconnectuser" && (
-              <View style={styles.userjoined}>
-                <Text style={styles.userjoinedtext}>{msg.message}</Text>
+            {(msg.type == "connectUser" || msg.type == "disconnectuser") && (
+              <View style={styles.userjoinedleft}>
+                <View style={styles.userjoined}>
+                  <Text style={styles.userjoinedtext}>{msg.message}</Text>
+                </View>
               </View>
             )}
           </View>
@@ -206,8 +208,12 @@ const styles = StyleSheet.create({
   userjoined: {
     display: "flex",
     flexDirection: "row",
-    padding: 10,
     justifyContent: "center",
+    alignContent: "center",
+    padding: 10,
+    backgroundColor: "gray",
+    width: "40%",
+    borderRadius: 20,
   },
   userjoinedtext: {
     width: "70%",
@@ -216,6 +222,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     padding: 20,
     textAlign: "center",
-    backgroundColor: "gray",
+  },
+  userjoinedleft: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignContent: "center",
+    padding: 10,
   },
 });

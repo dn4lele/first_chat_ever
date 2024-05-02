@@ -12,6 +12,8 @@ import {
 import Chat_screen from "./pages/Chat_screen";
 import Create_User from "./pages/Create_User";
 import Poeple_list from "./pages/poeple_list";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Button } from "@rneui/base";
 
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -19,7 +21,25 @@ const Drawer = createDrawerNavigator();
 function Secound_screen() {
   return (
     <Drawer.Navigator initialRouteName="chat_screen">
-      <Drawer.Screen name="chat_screen" component={Chat_screen} />
+      <Drawer.Screen
+        name="chat_screen"
+        component={Chat_screen}
+        options={{
+          headerRight: () => {
+            return (
+              <>
+                <Button
+                  title="log out"
+                  onPress={() => {
+                    AsyncStorage.clear();
+                    navigation.navigate("create_user");
+                  }}
+                />
+              </>
+            );
+          },
+        }}
+      />
       <Drawer.Screen name="poeple_list" component={Poeple_list} />
     </Drawer.Navigator>
   );

@@ -15,7 +15,6 @@ export default function Poeple_list({ navigation }) {
     <>
       <Button
         title="People List"
-        //i want to move to screen poeple_list but to pass this screen otherusers
         onPress={() => navigation.navigate("chat_screen")}
       >
         <Text>back to all chat</Text>
